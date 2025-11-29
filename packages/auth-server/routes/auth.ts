@@ -107,6 +107,54 @@ router.post("/login",async(req,res)=>{
     }
 })
 
+
+router.post("/refresh",async(req,res)=>{
+    const redis:Redis=req.app.get("redis");
+    const jwtPair=req.app.get("jwtPair");
+
+    const refreshToken=req.cookies?.refresh;
+    if(!refreshToken){
+        return res.status(401).json({error:"Refresh token is required"});
+    }
+    
+    const refreshHash=sha256hex(refreshToken);
+    const key=`refresh:${refreshHash}`;
+    const data=await redis.get(key);
+    if(!data) return res.status(401).json({error:"Invalid refresh token"});
+
+    await redis.del(key);
+
+    const parsed=JSON.parse(data);
+    const newSessionId=parsed.sessionId;
+    const newRefreshToken=randomHex(32);
+    const newRefreshHash=sha256hex(newRefreshToken);
+      await redis.set(`refresh:${newRefreshHash}`, JSON.stringify({ userId: parsed.userId, sessionId: newSessionId }), "EX", REFRESH_TTL);
+
+      const now=Math.floor(Date.now()/1000);
+      const jwt = await new SignJWT({
+        sub:parsed.userId,
+        sid:newSessionId
+      })
+      .setProtectedHeader({alg:"RS256"})
+      .setIssuedAt(now)
+      .setIssuer(process.env.JWT_ISSUER||"http://localhost:3000")
+      .setExpirationTime(now+ACCESS_EXP)
+      .setNotBefore(now)
+      .sign(await importJwkPrivate(jwtPair));
+
+      res.cookie("refresh",newRefreshToken,{
+        httpOnly:true,
+        secure:false,
+        sameSite:"lax",
+        maxAge:REFRESH_TTL*1000
+      })
+
+      return res.status(200).json({
+        message:"Refresh successful",
+        access_token:jwt
+      })
+})
+
 router.post("/sign-out",async(req,res)=>{
     const redis:Redis=req.app.get("redis");
     const refreshToken=req.cookies?.refresh;

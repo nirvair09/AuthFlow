@@ -1,0 +1,13 @@
+{
+  "name": "authflow",
+  "version": "1.0.0",
+  "main": "index.js",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "install-all": "pnpm install",
+    "dev:server": "pnpm --filter auth-server dev",
+    "dev": "pnpm -w -s dev:server"
+  }
+}

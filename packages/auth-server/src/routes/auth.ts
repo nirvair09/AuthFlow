@@ -1,11 +1,11 @@
 import express from "express";
-import User from "../src/models/user.model";
+import User from "../models/user.model";
 import dotenv from "dotenv";
 import argon2 from "argon2";
 import { Redis } from "ioredis";
-import {randomHex, sha256hex} from "../src/utils";
-import {SignJWT} from "jose";
-import {JWKPair} from "../src/jwks";
+import {randomHex, sha256hex} from "../utils";
+import {SignJWT, importJWK} from "jose";
+import {JWKPair} from "../jwks";
 
 dotenv.config();
 
@@ -166,8 +166,6 @@ router.post("/sign-out",async(req,res)=>{
 
     return res.status(200).json({message:"Logout successful"});
 })
-
-import {importJWK,importPKCS8,JWK} from "jose";
 
 async function importJwkPrivate(jwkPair:JWKPair){
     try {

@@ -1,5 +1,6 @@
 import {generateKeyPair} from "jose";
 import {exportJWK} from "jose";
+import crypto from "crypto";
 
 export type JWKPair = {
     kid:string;

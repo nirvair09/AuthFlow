@@ -9,5 +9,8 @@
     "install-all": "pnpm install",
     "dev:server": "pnpm --filter auth-server dev",
     "dev": "pnpm -w -s dev:server"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7"
   }
 }

@@ -1,0 +1,24 @@
+{
+  "name": "Profile",
+  "request": {
+    "type": "http",
+    "url": "http://localhost:4000/v1/auth/profile",
+    "scripts": {
+      "preRequest": "",
+      "postResponse": ""
+    },
+    "method": "GET",
+    "queryParams": [],
+    "headers": [],
+    "body": null,
+    "contentType": "text/plain",
+    "auth": {
+      "currentAuthType": "BEARER_TOKEN",
+      "authConfigStore": {
+        "BEARER_TOKEN": {
+          "bearer": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI2OTJiYTMyODAxZTU5MTUyZDRiNTlkNTIiLCJzaWQiOiIzYjdmNzQ0OWFlOGYwOTgzZTU5ZTY2OTEzNDUzOGZkNSIsImlhdCI6MTc2NDUwOTI4NSwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDozMDAwIiwiZXhwIjoxNzY0NTEwMTg1LCJuYmYiOjE3NjQ1MDkyODV9.atxin0-6qxSC7QRjbNBJeOhlvROUMfTRW0VjUGHTCYwHYMlghvzwXuQZTVP5C0Tp2qhyDMudDdpw-fEZh5z6wyKwXYc6uoIdwNJprq3VXoPTQoqU1MwIjsqot1PM896gbhxTBCJYHPtzF8zipOE2qFqS9jvk3ubaoKM1eC6M-PEjt3vl5HuhVv0NxMQpUEqdCn29F4kKqhGk86FQ7VazFAm1XjG7FbooihywnmZKPAf5KUVtlG7JBMtMNjeqV6pHFNbXkWJ45ni_HFqAy6e719Qu6qTBZMqZCMjvf6xxCBUkVp-5xX1ISJR7MXtB-GxYjatVD1kIxKOCQxUj-_z5Lg"
+        }
+      }
+    }
+  }
+}

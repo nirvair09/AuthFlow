@@ -156,6 +156,7 @@ router.post("/refresh",async(req,res)=>{
         httpOnly:true,
         secure:false,
         sameSite:"lax",
+        path:"/",
         maxAge:REFRESH_TTL*1000
       })
 

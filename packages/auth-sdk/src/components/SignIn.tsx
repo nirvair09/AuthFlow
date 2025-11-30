@@ -23,7 +23,7 @@ export function SignIn({ open, onClose }: { open: boolean; onClose: () => void }
           placeholder="Email"
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.currentTarget.value)}
           required
         />
         <input
@@ -31,7 +31,7 @@ export function SignIn({ open, onClose }: { open: boolean; onClose: () => void }
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.currentTarget.value)}
           required
         />
         <button

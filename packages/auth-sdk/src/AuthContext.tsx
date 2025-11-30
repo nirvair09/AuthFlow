@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
 type User = {
@@ -13,58 +13,59 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({
-  children,
-  authUrl
-}: {
-  children: React.ReactNode;
-  authUrl: string;
-}) {
+export function AuthProvider({ children, authUrl }: { children: React.ReactNode; authUrl: string }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Refresh access token on page load
-  useEffect(() => {
-    axios.post(`${authUrl}/v1/auth/refresh`, {}, { withCredentials: true })
-      .then(async (res) => {
-        setAccessToken(res.data.access_token);
-        const userInfo = await fetchUser(res.data.access_token);
-        setUser(userInfo);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  async function fetchUser(token: string): Promise<User> {
-    const base = localStorage.getItem("backend") || "http://localhost:5001";
-
-    const res = await axios.get(`${base}/profile`, {
-      headers: { Authorization: `Bearer ${token}` }
+  const fetchUser = useCallback(async (token: string) => {
+    const res = await axios.get(`${authUrl}/profile`, {
+      headers: { Authorization: `Bearer ${token}` },
+      withCredentials: true,
     });
+    return res.data.user;
+  }, [authUrl]);
 
-    return res.data;
-  }
+  const refreshSession = useCallback(async () => {
+    try {
+      const res = await axios.post(`${authUrl}/v1/auth/refresh`, {}, { withCredentials: true });
+      const token = res.data.access_token;
+
+      setAccessToken(token);
+
+      const info = await fetchUser(token);
+      setUser(info);
+    } catch {
+      setUser(null);
+      setAccessToken(null);
+    }
+  }, [authUrl, fetchUser]);
+
+  useEffect(() => {
+    refreshSession().finally(() => setLoading(false));
+  }, [refreshSession]);
 
   async function signIn(email: string, password: string) {
-    const res = await axios.post(`${authUrl}/v1/auth/sign-in`,
+    const res = await axios.post(
+      `${authUrl}/v1/auth/sign-in`,
       { email, password },
       { withCredentials: true }
     );
 
-    setAccessToken(res.data.access_token);
-    const userInfo = await fetchUser(res.data.access_token);
-    setUser(userInfo);
+    const token = res.data.access_token;
+    setAccessToken(token);
+
+    const info = await fetchUser(token);
+    setUser(info);
   }
 
   async function signUp(email: string, password: string, name: string) {
-    await axios.post(`${authUrl}/v1/auth/register`,
-      { email, password, name }
-    );
+    await axios.post(`${authUrl}/v1/auth/register`, { email, password, name });
     await signIn(email, password);
   }
 
@@ -75,14 +76,17 @@ export function AuthProvider({
   }
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      accessToken,
-      signIn,
-      signUp,
-      signOut
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        accessToken,
+        signIn,
+        signUp,
+        signOut,
+        refreshSession,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

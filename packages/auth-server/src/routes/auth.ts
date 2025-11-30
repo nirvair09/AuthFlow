@@ -6,6 +6,7 @@ import { Redis } from "ioredis";
 import {randomHex, sha256hex} from "../utils";
 import {SignJWT, importJWK} from "jose";
 import {JWKPair} from "../jwks";
+import { authenticate } from "../middlewares/authenticate";
 
 dotenv.config();
 
@@ -175,6 +176,28 @@ router.post("/sign-out",async(req,res)=>{
 
     return res.status(200).json({message:"Logout successful"});
 })
+
+router.get("/profile", authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.user!.id).select("_id email name metadata");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.json({
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        metadata: user.metadata,
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 async function importJwkPrivate(jwkPair:JWKPair){
     try {

@@ -1,0 +1,40 @@
+{
+  "name": "Register",
+  "request": {
+    "type": "http",
+    "url": "http://localhost:4000/v1/auth/register",
+    "scripts": {
+      "preRequest": "",
+      "postResponse": ""
+    },
+    "method": "POST",
+    "queryParams": [
+      {
+        "id": 1764464985271,
+        "key": "",
+        "value": "",
+        "isEnabled": true
+      }
+    ],
+    "headers": [
+      {
+        "id": 1764465701359,
+        "key": "content-type",
+        "value": "application/json",
+        "isEnabled": true
+      }
+    ],
+    "body": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"yourpassword123\",\n  \"name\": \"John Doe\"\n}",
+    "bodyContainer": {
+      "text": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"yourpassword123\",\n  \"name\": \"John Doe\"\n}",
+      "form": [],
+      "multipartForm": []
+    },
+    "contentType": "text/plain",
+    "auth": {
+      "currentAuthType": "INHERIT",
+      "authConfigStore": {}
+    },
+    "pathVariables": []
+  }
+}

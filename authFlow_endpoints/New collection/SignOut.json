@@ -1,0 +1,25 @@
+{
+  "name": "SignOut",
+  "request": {
+    "type": "http",
+    "url": "http://localhost:4000/v1/auth/sign-out",
+    "scripts": {
+      "preRequest": "",
+      "postResponse": ""
+    },
+    "method": "POST",
+    "queryParams": [],
+    "headers": [],
+    "body": null,
+    "contentType": "text/plain",
+    "auth": {
+      "currentAuthType": "BEARER_TOKEN",
+      "authConfigStore": {
+        "BEARER_TOKEN": {
+          "bearer": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI2OTJiOWQ2MmRlZjFiMDNiYTJlM2M0OGYiLCJzaWQiOiIxZTBmYWY2OGY4MWVlODg3MTY2N2Q3MWEwMzhiNzIzNSIsImlhdCI6MTc2NDQ2NjE0MiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDozMDAwIiwiZXhwIjoxNzY0NDY3MDQyLCJuYmYiOjE3NjQ0NjYxNDJ9.ENAf0MwnNuuixkkUfNj5Hjyh7AwdhAX9ip3x7EDx3hByzHEwJQpVK2f4TuSmmuTu6JZbwQrtl7mf-DO7wIoOvhP1CFEITom4TJh1fnpyST13GHnFgpW3DqDvmP8rb5xGptsgQgZ6H4y8visTJLBLi8SpXMKHvWKNIXdfcDsWBJktjUoBLo7o7Os5WyJrklyszJnIoY2-hE8AgfXMsbX8Gnz1f5cF2lSInK2JpON0i-2MgSaoOgy2RahObFaJp2a1rBxzZdAwox7h2aFvMi2Wr44AOo1APHtBfqTGl-O5hhHx4V7a9TrwO4vVjQ-nb2af5WQH-CyzZXrObzUWu4ZCYQ"
+        }
+      }
+    },
+    "pathVariables": []
+  }
+}

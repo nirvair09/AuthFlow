@@ -1,0 +1,33 @@
+{
+  "name": "SignIn",
+  "request": {
+    "type": "http",
+    "url": "http://localhost:4000/v1/auth/sign-in",
+    "scripts": {
+      "preRequest": "",
+      "postResponse": ""
+    },
+    "method": "POST",
+    "queryParams": [],
+    "headers": [
+      {
+        "id": 1764466093451,
+        "key": "content-type",
+        "value": "application/json",
+        "isEnabled": true
+      }
+    ],
+    "body": "{\n\"email\": \"user@example.com\",\n  \"password\": \"yourpassword123\"\n}",
+    "bodyContainer": {
+      "text": "{\n\"email\": \"user@example.com\",\n  \"password\": \"yourpassword123\"\n}",
+      "form": [],
+      "multipartForm": []
+    },
+    "contentType": "text/plain",
+    "auth": {
+      "currentAuthType": "INHERIT",
+      "authConfigStore": {}
+    },
+    "pathVariables": []
+  }
+}

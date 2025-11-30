@@ -16,7 +16,7 @@ const REFRESH_TTL = Number(process.env.REFRESH_TOKEN_TTL || 7 * 24 * 3600);
 
 router.post("/register",async(req,res)=>{
     const {email,password,name,metadata}=req.body;
-    console.log(email,password,name);
+    // console.log(email,password,name);
     if(!email ||!password || !name){
         return res.status(400).json({error:"Email, password, and name are required"});
     }
@@ -51,7 +51,7 @@ router.post("/register",async(req,res)=>{
 });
 
 
-router.post("/login",async(req,res)=>{
+router.post("/sign-in",async(req,res)=>{
     const {email,password}=req.body;
     const redis:Redis = req.app.get("redis");
     const jwkPair=req.app.get("jwkPair");

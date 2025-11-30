@@ -11,6 +11,8 @@
     "dev": "pnpm -w -s dev:server"
   },
   "devDependencies": {
-    "@types/react": "^19.2.7"
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "react-router-dom": "^7.9.6"
   }
 }

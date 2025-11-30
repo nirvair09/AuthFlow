@@ -15,10 +15,10 @@ const ACCESS_EXP = Number(process.env.ACCESS_TOKEN_EXP || 900); // seconds
 const REFRESH_TTL = Number(process.env.REFRESH_TOKEN_TTL || 7 * 24 * 3600);
 
 router.post("/register",async(req,res)=>{
-    const {email,password,metadata}=req.body;
-
-    if(!email ||!password){
-        return res.status(400).json({error:"Email and password are required"});
+    const {email,password,name,metadata}=req.body;
+    console.log(email,password,name);
+    if(!email ||!password || !name){
+        return res.status(400).json({error:"Email, password, and name are required"});
     }
 
     try {
@@ -30,6 +30,7 @@ router.post("/register",async(req,res)=>{
         const passwordHash = await argon2.hash(password);
         const user = await User.create({
             email,
+            name,
             password:passwordHash,
             metadata
         });
@@ -39,6 +40,7 @@ router.post("/register",async(req,res)=>{
             user:{
                 id:user._id,
                 email:user.email,
+                name:user.name,
                 metadata:user.metadata
             }
         });

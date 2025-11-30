@@ -7,7 +7,7 @@ export function AuthProvider({ children, authUrl }) {
     const [accessToken, setAccessToken] = useState(null);
     const [loading, setLoading] = useState(true);
     const fetchUser = useCallback(async (token) => {
-        const res = await axios.get(`${authUrl}/profile`, {
+        const res = await axios.get(`${authUrl}/v1/auth/profile`, {
             headers: { Authorization: `Bearer ${token}` },
             withCredentials: true,
         });

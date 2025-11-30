@@ -24,7 +24,7 @@ export function AuthProvider({ children, authUrl }: { children: React.ReactNode;
   const [loading, setLoading] = useState(true);
 
   const fetchUser = useCallback(async (token: string) => {
-    const res = await axios.get(`${authUrl}/profile`, {
+    const res = await axios.get(`${authUrl}/v1/auth/profile`, {
       headers: { Authorization: `Bearer ${token}` },
       withCredentials: true,
     });

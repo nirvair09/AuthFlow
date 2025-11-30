@@ -75,12 +75,19 @@ router.post("/sign-in",async(req,res)=>{
         const refreshToken =randomHex(32);
         const refreshHash=sha256hex(refreshToken);
 
+        await redis.set(
+  `refresh:${refreshHash}`,
+  JSON.stringify({ userId: user._id.toString(), sessionId }),
+  "EX",
+  REFRESH_TTL
+);
+
         const now = Math.floor(Date.now()/1000);
         const jwt = await new SignJWT({
             sub:user._id.toString(),
             sid:sessionId
         })
-          .setProtectedHeader({alg:"RS256"})
+          .setProtectedHeader({ alg: "RS256"})
           .setIssuedAt(now)
           .setIssuer(process.env.JWT_ISSUER||"http://localhost:3000")
           .setExpirationTime(now+ACCESS_EXP)
@@ -112,7 +119,7 @@ router.post("/sign-in",async(req,res)=>{
 
 router.post("/refresh",async(req,res)=>{
     const redis:Redis=req.app.get("redis");
-    const jwtPair=req.app.get("jwtPair");
+    const jwkPair=req.app.get("jwkPair");
 
     const refreshToken=req.cookies?.refresh;
     if(!refreshToken){
@@ -142,7 +149,7 @@ router.post("/refresh",async(req,res)=>{
       .setIssuer(process.env.JWT_ISSUER||"http://localhost:3000")
       .setExpirationTime(now+ACCESS_EXP)
       .setNotBefore(now)
-      .sign(await importJwkPrivate(jwtPair));
+      .sign(await importJwkPrivate(jwkPair));
 
       res.cookie("refresh",newRefreshToken,{
         httpOnly:true,

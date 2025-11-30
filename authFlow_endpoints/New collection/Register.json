@@ -24,9 +24,9 @@
         "isEnabled": true
       }
     ],
-    "body": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"yourpassword123\",\n  \"name\": \"John Doe\"\n}",
+    "body": "{\n  \"email\": \"user1@example.com\",\n  \"password\": \"yourpassword123\",\n  \"name\": \"John Doe\"\n}",
     "bodyContainer": {
-      "text": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"yourpassword123\",\n  \"name\": \"John Doe\"\n}",
+      "text": "{\n  \"email\": \"user1@example.com\",\n  \"password\": \"yourpassword123\",\n  \"name\": \"John Doe\"\n}",
       "form": [],
       "multipartForm": []
     },

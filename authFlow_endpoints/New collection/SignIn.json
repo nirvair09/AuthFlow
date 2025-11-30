@@ -17,9 +17,9 @@
         "isEnabled": true
       }
     ],
-    "body": "{\n\"email\": \"user@example.com\",\n  \"password\": \"yourpassword123\"\n}",
+    "body": "{\n\"email\": \"user1@example.com\",\n  \"password\": \"yourpassword123\"\n}",
     "bodyContainer": {
-      "text": "{\n\"email\": \"user@example.com\",\n  \"password\": \"yourpassword123\"\n}",
+      "text": "{\n\"email\": \"user1@example.com\",\n  \"password\": \"yourpassword123\"\n}",
       "form": [],
       "multipartForm": []
     },

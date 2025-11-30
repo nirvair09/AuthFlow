@@ -1,0 +1,25 @@
+{
+  "name": "Refresh",
+  "request": {
+    "type": "http",
+    "url": "http://localhost:4000/v1/auth/refresh",
+    "scripts": {
+      "preRequest": "",
+      "postResponse": ""
+    },
+    "method": "POST",
+    "queryParams": [],
+    "headers": [],
+    "body": null,
+    "contentType": "text/plain",
+    "auth": {
+      "currentAuthType": "BEARER_TOKEN",
+      "authConfigStore": {
+        "BEARER_TOKEN": {
+          "bearer": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI2OTJiYTMyODAxZTU5MTUyZDRiNTlkNTIiLCJzaWQiOiI3ZGIzYzhjZmZmYTdhYWZlZGIzZTM3YWE4YzFmY2QzZiIsImlhdCI6MTc2NDQ2NzUwNSwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDozMDAwIiwiZXhwIjoxNzY0NDY4NDA1LCJuYmYiOjE3NjQ0Njc1MDV9.T0qS522Du6hlhjIfseD5JyuZDopm9vLfzPRWJjiguLUfH0VrF1LRaTa-s1586pIHfx95vPc6g3SS51MRu0-C6bCXZ7D3ANcPYrTLCrP_Aae8bYE0ceiOjtzIq0Qtr7-fJqODoJ_s81ZRhYq9br9ncemEbIz2F7oFTlTXa60zeqgllRtr2m4OSAXiD-guupjgGQR94dQ6OBRXCJ2op0GTBrYKohcT5fs6o7aQjQ1OCyXt2ubnCe7ZzOpMQGgmqqPMOy3iRZkElVCevTQvQ95RIp3xkHqm5cTfdXbgXTE6QFrsltwszv0VMgZ0_rosv-TYRZ_y8ACyhwqHvS59BMD0cQ"
+        }
+      }
+    },
+    "pathVariables": []
+  }
+}

@@ -11,6 +11,9 @@ export interface IUser extends mongoose.Document {
     knownDevices: Array<{ ip: string; userAgent: string; lastUsed: Date }>;
     failedLoginAttempts: number;
     lockUntil?: Date;
+    twoFactorSecret?: string;
+    isTwoFactorEnabled: boolean;
+    role: "admin" | "editor" | "viewer" | "user";
 }
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -27,7 +30,10 @@ const userSchema = new mongoose.Schema<IUser>({
         lastUsed: { type: Date, default: Date.now }
     }],
     failedLoginAttempts: { type: Number, default: 0 },
-    lockUntil: { type: Date }
+    lockUntil: { type: Date },
+    twoFactorSecret: { type: String },
+    isTwoFactorEnabled: { type: Boolean, default: false },
+    role: { type: String, enum: ["admin", "editor", "viewer", "user"], default: "user" }
 },{timestamps:true});
 
 export default mongoose.model<IUser>("User",userSchema);

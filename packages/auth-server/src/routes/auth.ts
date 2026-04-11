@@ -8,6 +8,8 @@ import {SignJWT, importJWK} from "jose";
 import {JWKPair} from "../jwks";
 import { authenticate } from "../middlewares/authenticate";
 import { publishAuthEvent } from "../queues/auth.queue";
+import { authenticator } from "otplib";
+import QRCode from "qrcode";
 
 dotenv.config();
 
@@ -120,6 +122,18 @@ router.post("/sign-in",async(req,res)=>{
 
         await user.save();
 
+        // Check if 2FA is enabled
+        if (user.isTwoFactorEnabled) {
+            // Generate a temporary 2FA session token (valid for 5 mins)
+            const mfaToken = randomHex(32);
+            await redis.set(`mfa:${mfaToken}`, user._id.toString(), "EX", 300);
+            return res.status(200).json({
+                message: "2FA required",
+                mfa_token: mfaToken,
+                next_step: "VERIFY_OTP"
+            });
+        }
+
         const sessionId=randomHex(16);
         const refreshToken =randomHex(32);
         const refreshHash=sha256hex(refreshToken);
@@ -130,6 +144,7 @@ router.post("/sign-in",async(req,res)=>{
             JSON.stringify({ 
                 userId: user._id.toString(), 
                 sessionId,
+                role: user.role,
                 context: { ip, userAgent } 
             }),
             "EX",
@@ -139,7 +154,8 @@ router.post("/sign-in",async(req,res)=>{
         const now = Math.floor(Date.now()/1000);
         const jwt = await new SignJWT({
             sub:user._id.toString(),
-            sid:sessionId
+            sid:sessionId,
+            role: user.role
         })
           .setProtectedHeader({ alg: "RS256"})
           .setIssuedAt(now)
@@ -191,14 +207,20 @@ router.post("/refresh",async(req,res)=>{
 
     const parsed=JSON.parse(data);
     const newSessionId=parsed.sessionId;
+    const userRole=parsed.role || "user";
     const newRefreshToken=randomHex(32);
     const newRefreshHash=sha256hex(newRefreshToken);
-      await redis.set(`refresh:${newRefreshHash}`, JSON.stringify({ userId: parsed.userId, sessionId: newSessionId }), "EX", REFRESH_TTL);
+      await redis.set(`refresh:${newRefreshHash}`, JSON.stringify({ 
+        userId: parsed.userId, 
+        sessionId: newSessionId,
+        role: userRole 
+      }), "EX", REFRESH_TTL);
 
       const now=Math.floor(Date.now()/1000);
       const jwt = await new SignJWT({
         sub:parsed.userId,
-        sid:newSessionId
+        sid:newSessionId,
+        role: userRole
       })
       .setProtectedHeader({alg:"RS256"})
       .setIssuedAt(now)
@@ -263,5 +285,94 @@ async function importJwkPrivate(jwkPair:JWKPair){
     }
 }
 
+
+// --- 2FA & Multi-Factor Authentication ---
+
+router.post("/2fa/setup", authenticate, async (req, res) => {
+    const user = await User.findById(req.user!.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const secret = authenticator.generateSecret();
+    const otpauth = authenticator.keyuri(user.email, "AuthFlow", secret);
+    
+    user.twoFactorSecret = secret;
+    await user.save();
+
+    const qrCodeUrl = await QRCode.toDataURL(otpauth);
+    
+    return res.json({
+        secret,
+        qrCode: qrCodeUrl
+    });
+});
+
+router.post("/2fa/enable", authenticate, async (req, res) => {
+    const { token } = req.body;
+    const user = await User.findById(req.user!.id);
+    if (!user || !user.twoFactorSecret) return res.status(400).json({ error: "2FA not setup" });
+
+    const isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+    if (!isValid) return res.status(400).json({ error: "Invalid OTP token" });
+
+    user.isTwoFactorEnabled = true;
+    await user.save();
+
+    return res.json({ message: "2FA enabled successfully" });
+});
+
+router.post("/2fa/verify-login", async (req, res) => {
+    const { mfa_token, token } = req.body;
+    const redis: Redis = req.app.get("redis");
+    const jwkPair = req.app.get("jwkPair");
+
+    const userId = await redis.get(`mfa:${mfa_token}`);
+    if (!userId) return res.status(401).json({ error: "Invalid or expired MFA session" });
+
+    const user = await User.findById(userId);
+    if (!user || !user.twoFactorSecret) return res.status(401).json({ error: "User or 2FA secret not found" });
+
+    const isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+    if (!isValid) return res.status(401).json({ error: "Invalid OTP token" });
+
+    // Success - clean up MFA token
+    await redis.del(`mfa:${mfa_token}`);
+
+    // Issue tokens (same logic as sign-in)
+    const sessionId = randomHex(16);
+    const refreshToken = randomHex(32);
+    const refreshHash = sha256hex(refreshToken);
+
+    await redis.set(
+        `refresh:${refreshHash}`,
+        JSON.stringify({ userId: user._id.toString(), sessionId, role: user.role }),
+        "EX",
+        REFRESH_TTL
+    );
+
+    const now = Math.floor(Date.now() / 1000);
+    const jwt = await new SignJWT({ sub: user._id.toString(), sid: sessionId, role: user.role })
+        .setProtectedHeader({ alg: "RS256" })
+        .setIssuedAt(now)
+        .setIssuer(process.env.JWT_ISSUER || "http://localhost:3000")
+        .setExpirationTime(now + ACCESS_EXP)
+        .setNotBefore(now)
+        .sign(await importJwkPrivate(jwkPair));
+
+    res.cookie("refresh", refreshToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        maxAge: REFRESH_TTL * 1000
+    });
+
+    return res.json({ message: "Login successful", access_token: jwt });
+});
+
+// --- RBAC & Admin Routes ---
+import { authorize } from "../middlewares/authorize";
+
+router.get("/admin/dashboard", authenticate, authorize(["admin"]), async (req, res) => {
+    return res.json({ message: "Welcome to the Admin Dashboard", stats: { users: 1234, status: "healthy" } });
+});
 
 export default router;

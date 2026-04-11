@@ -22,6 +22,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     req.user = {
       id: payload.sub as string,
       sessionId: payload.sid as string,
+      role: payload.role as string,
     };
 
     next();

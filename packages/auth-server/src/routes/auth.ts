@@ -8,6 +8,7 @@ import {SignJWT, importJWK} from "jose";
 import {JWKPair} from "../jwks";
 import { authenticate } from "../middlewares/authenticate";
 import { publishAuthEvent } from "../queues/auth.queue";
+// @ts-ignore
 import { authenticator } from "otplib";
 import QRCode from "qrcode";
 import { logger } from "../utils/logger";
@@ -105,8 +106,8 @@ router.post("/sign-in",async(req,res)=>{
         user.failedLoginAttempts = 0;
         user.lockUntil = undefined;
         
-        const ip = req.ip;
-        const userAgent = req.headers["user-agent"] || "unknown";
+        const ip = req.ip || "unknown";
+        const userAgent = (req.headers["user-agent"] as string) || "unknown";
 
         // Device Fingerprinting & suspicious login detection
         const isKnownDevice = user.knownDevices.some(d => d.ip === ip && d.userAgent === userAgent);

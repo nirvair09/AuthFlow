@@ -11,6 +11,16 @@ const userSchema = new mongoose_1.default.Schema({
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
     isVerified: { type: Boolean, default: false },
-    metadata: { type: mongoose_1.default.Schema.Types.Mixed }
+    metadata: { type: mongoose_1.default.Schema.Types.Mixed },
+    knownDevices: [{
+            ip: String,
+            userAgent: String,
+            lastUsed: { type: Date, default: Date.now }
+        }],
+    failedLoginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date },
+    twoFactorSecret: { type: String },
+    isTwoFactorEnabled: { type: Boolean, default: false },
+    role: { type: String, enum: ["admin", "editor", "viewer", "user"], default: "user" }
 }, { timestamps: true });
 exports.default = mongoose_1.default.model("User", userSchema);

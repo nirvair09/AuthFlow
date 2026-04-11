@@ -3,6 +3,7 @@ declare namespace Express {
     user?: {
       id: string | undefined;
       sessionId: string | undefined;
+      role?: string;
     };
   }
 }

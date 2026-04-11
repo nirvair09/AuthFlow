@@ -64,10 +64,10 @@ async function startServer() {
         message: "Too many login attempts, please try again after 15 minutes."
     });
 
-    app.use(globalRateLimiter);
+    app.use(globalRateLimiter as any);
     app.set("authRateLimiter", authRateLimiter);
 
-    app.use("/v1/auth/sign-in", authRateLimiter);
+    app.use("/v1/auth/sign-in", authRateLimiter as any);
     app.use("/v1/auth", authRoutes);
 
     // Start Background Workers
@@ -106,7 +106,7 @@ async function startServer() {
     process.on("SIGINT", shutdown);
 
   } catch (error) {
-    logger.error("Failed to start server:", error);
+    logger.error(error, "Failed to start server:");
     process.exit(1);
   }
 }

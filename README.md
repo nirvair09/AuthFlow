@@ -63,6 +63,20 @@ Use it to integrate a full authentication system into any frontend.
 * Scales horizontally
 * Pre-configured for production CORS, cookies, and HTTPS
 
+### 🚀 **Advanced "Backend-Heavy" Features**
+
+* **Distributed Rate Limiting:** Redis-based sliding window rate limiting for global protection and brute-force prevention on auth endpoints.
+* **Event-Driven Architecture:** Asynchronous job processing using **BullMQ** (Redis-backed). Decoupled notification service for welcome emails and suspicious login alerts.
+* **Device Fingerprinting:** Captures IP and User-Agent context to identify known devices and detect suspicious account activity.
+* **Account Lockout:** Automatic temporary suspension after multiple failed login attempts to mitigate dictionary attacks.
+* **Multi-Factor Auth (MFA/2FA):** Time-based One-Time Password (TOTP) support using `otplib` and QR code generation.
+* **Role-Based Access Control (RBAC):** Granular authorization middleware to restrict access based on user roles (Admin, Editor, etc.).
+* **Production Observability:** 
+    * **Structured Logging:** High-performance JSON logging using **Pino** for easy ingestion and debugging.
+    * **Real-time Metrics:** Prometheus integration via `prom-client` exposing `/metrics` for monitoring auth success/failure rates and latency.
+* **Clean Architecture:** Refactored into Repository and Service layers for enterprise-grade maintainability.
+* **Graceful Shutdown:** Ensures zero-downtime-ready deployments by safely closing connections to MongoDB and Redis.
+
 ### 🔧 Easily Extensible
 
 * Add OAuth (Google/GitHub)

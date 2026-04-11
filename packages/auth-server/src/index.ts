@@ -39,15 +39,15 @@ async function startServer() {
     // Connect to MongoDB
     if (process.env.MONGO_URI) {
         await mongoose.connect(process.env.MONGO_URI);
-        console.log("Connected to MongoDB");
+        logger.info("Connected to MongoDB");
     } else {
-        console.warn("MONGO_URI not found in .env");
+        logger.warn("MONGO_URI not found in .env");
     }
 
     // Connect to Redis
     const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
     app.set("redis", redis);
-    console.log("Connected to Redis");
+    logger.info("Connected to Redis");
 
     // Rate Limiting
     const { createRateLimiter } = await import("./middlewares/rateLimiter");
@@ -77,13 +77,36 @@ async function startServer() {
     // Generate JWK Pair
     const jwkPair = await generateJWKPair();
     app.set("jwkPair", jwkPair);
-    console.log("Generated JWK Pair");
+    logger.info("Generated JWK Pair");
 
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+    const server = app.listen(PORT, () => {
+      logger.info(`Auth Flow Server is running on port ${PORT}`);
     });
+
+    // Graceful Shutdown
+    const shutdown = async () => {
+        logger.info("Shutting down gracefully...");
+        server.close(async () => {
+            logger.info("HTTP server closed.");
+            await mongoose.connection.close();
+            logger.info("MongoDB connection closed.");
+            await redis.quit();
+            logger.info("Redis connection closed.");
+            process.exit(0);
+        });
+
+        // If server doesn't close in 10s, force close
+        setTimeout(() => {
+            logger.error("Could not close connections in time, forcefully shutting down");
+            process.exit(1);
+        }, 10000);
+    };
+
+    process.on("SIGTERM", shutdown);
+    process.on("SIGINT", shutdown);
+
   } catch (error) {
-    console.error("Failed to start server:", error);
+    logger.error("Failed to start server:", error);
     process.exit(1);
   }
 }

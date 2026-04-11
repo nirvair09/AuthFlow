@@ -7,6 +7,7 @@ import {randomHex, sha256hex} from "../utils";
 import {SignJWT, importJWK} from "jose";
 import {JWKPair} from "../jwks";
 import { authenticate } from "../middlewares/authenticate";
+import { createStrictRateLimiter } from "../middlewares/rateLimiter";
 
 dotenv.config();
 
@@ -14,8 +15,9 @@ const router = express.Router();
 
 const ACCESS_EXP = Number(process.env.ACCESS_TOKEN_EXP || 900); // seconds
 const REFRESH_TTL = Number(process.env.REFRESH_TOKEN_TTL || 7 * 24 * 3600);
+const strictLimiter: any = createStrictRateLimiter();
 
-router.post("/register",async(req,res)=>{
+router.post("/register", strictLimiter, async(req,res)=>{
     const {email,password,name,metadata}=req.body;
     // console.log(email,password,name);
     if(!email ||!password || !name){
@@ -52,7 +54,7 @@ router.post("/register",async(req,res)=>{
 });
 
 
-router.post("/sign-in",async(req,res)=>{
+router.post("/sign-in", strictLimiter, async(req,res)=>{
     const {email,password}=req.body;
     const redis:Redis = req.app.get("redis");
     const jwkPair=req.app.get("jwkPair");

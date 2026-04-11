@@ -7,7 +7,6 @@ import {randomHex, sha256hex} from "../utils";
 import {SignJWT, importJWK} from "jose";
 import {JWKPair} from "../jwks";
 import { authenticate } from "../middlewares/authenticate";
-import { createStrictRateLimiter } from "../middlewares/rateLimiter";
 
 dotenv.config();
 
@@ -15,9 +14,8 @@ const router = express.Router();
 
 const ACCESS_EXP = Number(process.env.ACCESS_TOKEN_EXP || 900); // seconds
 const REFRESH_TTL = Number(process.env.REFRESH_TOKEN_TTL || 7 * 24 * 3600);
-const strictLimiter: any = createStrictRateLimiter();
 
-router.post("/register", strictLimiter, async(req,res)=>{
+router.post("/register",async(req,res)=>{
     const {email,password,name,metadata}=req.body;
     // console.log(email,password,name);
     if(!email ||!password || !name){
@@ -54,7 +52,7 @@ router.post("/register", strictLimiter, async(req,res)=>{
 });
 
 
-router.post("/sign-in", strictLimiter, async(req,res)=>{
+router.post("/sign-in",async(req,res)=>{
     const {email,password}=req.body;
     const redis:Redis = req.app.get("redis");
     const jwkPair=req.app.get("jwkPair");
@@ -63,27 +61,69 @@ router.post("/sign-in", strictLimiter, async(req,res)=>{
         return res.status(400).json({error:"Email and password are required"});
     }
 
-    const user = await User.findOne({email}).lean();
+    const user = await User.findOne({email});
     if(!user){
         return res.status(401).json({error:"Invalid credentials"});
     }
 
+    // Check account lockout
+    if (user.lockUntil && user.lockUntil > new Date()) {
+        const remainingMinutes = Math.ceil((user.lockUntil.getTime() - Date.now()) / 60000);
+        return res.status(403).json({ 
+            error: `Account is locked. Try again in ${remainingMinutes} minutes.` 
+        });
+    }
+
     try {
         const ok = await argon2.verify(user.password,password);
+        
         if(!ok){
+            // Increment failed attempts
+            user.failedLoginAttempts += 1;
+            if (user.failedLoginAttempts >= 5) {
+                user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // Lock for 15 mins
+                user.failedLoginAttempts = 0; // Reset after locking
+            }
+            await user.save();
             return res.status(401).json({error:"Invalid credentials"});
         }
+
+        // Login successful
+        user.failedLoginAttempts = 0;
+        user.lockUntil = undefined;
+        
+        const ip = req.ip;
+        const userAgent = req.headers["user-agent"] || "unknown";
+
+        // Device Fingerprinting & suspicious login detection
+        const isKnownDevice = user.knownDevices.some(d => d.ip === ip && d.userAgent === userAgent);
+        if (!isKnownDevice) {
+            // In Phase 2, we will publish a Message to RabbitMQ here
+            console.log(`[Suspicious Login] New device detected for ${user.email}: ${ip} | ${userAgent}`);
+            user.knownDevices.push({ ip, userAgent, lastUsed: new Date() });
+        } else {
+            // Update last used for known device
+            const device = user.knownDevices.find(d => d.ip === ip && d.userAgent === userAgent);
+            if (device) device.lastUsed = new Date();
+        }
+
+        await user.save();
 
         const sessionId=randomHex(16);
         const refreshToken =randomHex(32);
         const refreshHash=sha256hex(refreshToken);
 
+        // Store session with more context (IP, UA)
         await redis.set(
-  `refresh:${refreshHash}`,
-  JSON.stringify({ userId: user._id.toString(), sessionId }),
-  "EX",
-  REFRESH_TTL
-);
+            `refresh:${refreshHash}`,
+            JSON.stringify({ 
+                userId: user._id.toString(), 
+                sessionId,
+                context: { ip, userAgent } 
+            }),
+            "EX",
+            REFRESH_TTL
+        );
 
         const now = Math.floor(Date.now()/1000);
         const jwt = await new SignJWT({
@@ -107,15 +147,17 @@ router.post("/sign-in", strictLimiter, async(req,res)=>{
 
         return res.status(200).json({
             message:"Login successful",
-            access_token:jwt
+            access_token:jwt,
+            user: {
+                id: user._id,
+                email: user.email,
+                name: user.name
+            }
         });
 
-
     } catch (error) {
-
         console.log(error);
         return res.status(500).json({error:"Internal server error"});
-        
     }
 })
 

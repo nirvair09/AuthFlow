@@ -6,8 +6,6 @@ import mongoose from "mongoose";
 import Redis from "ioredis";
 import authRoutes from "./routes/auth";
 import { generateJWKPair } from "./jwks";
-import { connectRedis } from "./redisHelper";
-import { createRateLimiter } from "./middlewares/rateLimiter";
 
 dotenv.config();
 
@@ -39,11 +37,27 @@ async function startServer() {
     }
 
     // Connect to Redis
-    const redis = connectRedis();
+    const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
     app.set("redis", redis);
+    console.log("Connected to Redis");
 
-    // Apply global rate limiter
-    app.use(createRateLimiter() as any);
+    // Rate Limiting
+    const { createRateLimiter } = await import("./middlewares/rateLimiter");
+    
+    const globalRateLimiter = createRateLimiter(redis, {
+        windowMs: 60 * 1000, // 1 minute
+        max: 100,
+        message: "Too many requests, please try again later."
+    });
+
+    const authRateLimiter = createRateLimiter(redis, {
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 5,
+        message: "Too many login attempts, please try again after 15 minutes."
+    });
+
+    app.use(globalRateLimiter);
+    app.set("authRateLimiter", authRateLimiter);
 
     // Generate JWK Pair
     const jwkPair = await generateJWKPair();

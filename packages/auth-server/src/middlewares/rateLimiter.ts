@@ -1,33 +1,28 @@
 import rateLimit from "express-rate-limit";
-import RedisStore from "rate-limit-redis";
-import { getRedisClient } from "../redisHelper";
+import { RedisStore } from "rate-limit-redis";
+import { Redis } from "ioredis";
 
-export const createRateLimiter = () => {
-  const redisClient = getRedisClient();
-  return rateLimit({
-    store: new RedisStore({
-      // @ts-ignore
-      sendCommand: (...args: string[]) => redisClient.call(...args),
-    }),
-    windowMs: 15 * 60 * 1000, 
-    max: 100, 
-    standardHeaders: true, 
-    legacyHeaders: false, 
-    message: { error: "Too many requests from this IP, please try again after 15 minutes" },
-  });
-};
-
-export const createStrictRateLimiter = () => {
-    const redisClient = getRedisClient();
-  return rateLimit({
-    store: new RedisStore({
-      // @ts-ignore
-      sendCommand: (...args: string[]) => redisClient.call(...args),
-    }),
-    windowMs: 15 * 60 * 1000, 
-    max: 5, 
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: "Too many attempts from this IP, please try again after 15 minutes" },
-  });
+/**
+ * Creates a rate limiter middleware using Redis for distributed rate limiting.
+ */
+export const createRateLimiter = (redis: Redis, { 
+    windowMs, 
+    max, 
+    message 
+}: { 
+    windowMs: number; 
+    max: number; 
+    message: string 
+}) => {
+    return rateLimit({
+        windowMs,
+        max,
+        standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+        legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+        message: { error: message },
+        store: new RedisStore({
+            // @ts-expect-error - ioredis and redis types may conflict but it works at runtime
+            sendCommand: (...args: string[]) => redis.call(...args),
+        }),
+    });
 };

@@ -7,6 +7,7 @@ import {randomHex, sha256hex} from "../utils";
 import {SignJWT, importJWK} from "jose";
 import {JWKPair} from "../jwks";
 import { authenticate } from "../middlewares/authenticate";
+import { publishAuthEvent } from "../queues/auth.queue";
 
 dotenv.config();
 
@@ -34,6 +35,12 @@ router.post("/register",async(req,res)=>{
             name,
             password:passwordHash,
             metadata
+        });
+
+        await publishAuthEvent("USER_REGISTERED", {
+            userId: user._id,
+            email: user.email,
+            name: user.name
         });
 
         return res.status(201).json({
@@ -98,8 +105,12 @@ router.post("/sign-in",async(req,res)=>{
         // Device Fingerprinting & suspicious login detection
         const isKnownDevice = user.knownDevices.some(d => d.ip === ip && d.userAgent === userAgent);
         if (!isKnownDevice) {
-            // In Phase 2, we will publish a Message to RabbitMQ here
-            console.log(`[Suspicious Login] New device detected for ${user.email}: ${ip} | ${userAgent}`);
+            await publishAuthEvent("SUSPICIOUS_LOGIN", {
+                userId: user._id,
+                email: user.email,
+                ip,
+                userAgent
+            });
             user.knownDevices.push({ ip, userAgent, lastUsed: new Date() });
         } else {
             // Update last used for known device

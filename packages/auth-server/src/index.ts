@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(cookieParser() as any);
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/v1/auth", authRoutes);
+// Routes will be mounted in startServer after Redis and Rate Limiters are initialized.
 
 app.get("/", (req, res) => {
   res.send("Auth Server is running");
@@ -58,6 +58,13 @@ async function startServer() {
 
     app.use(globalRateLimiter);
     app.set("authRateLimiter", authRateLimiter);
+
+    app.use("/v1/auth/sign-in", authRateLimiter);
+    app.use("/v1/auth", authRoutes);
+
+    // Start Background Workers
+    const { startAuthWorker } = await import("./queues/auth.queue");
+    startAuthWorker();
 
     // Generate JWK Pair
     const jwkPair = await generateJWKPair();

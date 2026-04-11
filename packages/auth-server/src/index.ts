@@ -6,12 +6,15 @@ import mongoose from "mongoose";
 import Redis from "ioredis";
 import authRoutes from "./routes/auth";
 import { generateJWKPair } from "./jwks";
+import { httpLogger, logger } from "./utils/logger";
+import { register } from "./utils/metrics";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+app.use(httpLogger);
 app.use(cors({
   origin: "http://localhost:3000", // Adjust as needed
   credentials: true,
@@ -23,7 +26,12 @@ app.use(express.urlencoded({ extended: true }));
 // Routes will be mounted in startServer after Redis and Rate Limiters are initialized.
 
 app.get("/", (req, res) => {
-  res.send("Auth Server is running");
+  res.send("Auth Flow Server is running with Observability");
+});
+
+app.get("/metrics", async (req, res) => {
+    res.set("Content-Type", register.contentType);
+    res.end(await register.metrics());
 });
 
 async function startServer() {

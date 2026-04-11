@@ -10,6 +10,8 @@ import { authenticate } from "../middlewares/authenticate";
 import { publishAuthEvent } from "../queues/auth.queue";
 import { authenticator } from "otplib";
 import QRCode from "qrcode";
+import { logger } from "../utils/logger";
+import { authSuccessTotal, authFailureTotal } from "../utils/metrics";
 
 dotenv.config();
 
@@ -87,6 +89,7 @@ router.post("/sign-in",async(req,res)=>{
         const ok = await argon2.verify(user.password,password);
         
         if(!ok){
+            authFailureTotal.inc();
             // Increment failed attempts
             user.failedLoginAttempts += 1;
             if (user.failedLoginAttempts >= 5) {
@@ -98,6 +101,7 @@ router.post("/sign-in",async(req,res)=>{
         }
 
         // Login successful
+        authSuccessTotal.inc();
         user.failedLoginAttempts = 0;
         user.lockUntil = undefined;
         
@@ -113,6 +117,7 @@ router.post("/sign-in",async(req,res)=>{
                 ip,
                 userAgent
             });
+            logger.warn(`Suspicious login for ${user.email} from new device: ${ip}`);
             user.knownDevices.push({ ip, userAgent, lastUsed: new Date() });
         } else {
             // Update last used for known device

@@ -1,7 +1,8 @@
 import express from "express";
 import User from "../models/user.model";
 import dotenv from "dotenv";
-import argon2 from "argon2";
+import bcrypt from "bcryptjs";
+
 import { Redis } from "ioredis";
 import {randomHex, sha256hex} from "../utils";
 import {SignJWT, importJWK} from "jose";
@@ -34,7 +35,8 @@ router.post("/register",async(req,res)=>{
             return res.status(400).json({error:"User already exists"});
         }
 
-        const passwordHash = await argon2.hash(password);
+        const passwordHash = await bcrypt.hash(password, 10);
+
         const user = await User.create({
             email,
             name,
@@ -87,7 +89,8 @@ router.post("/sign-in",async(req,res)=>{
     }
 
     try {
-        const ok = await argon2.verify(user.password,password);
+        const ok = await bcrypt.compare(password, user.password);
+
         
         if(!ok){
             authFailureTotal.inc();

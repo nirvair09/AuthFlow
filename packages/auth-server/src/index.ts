@@ -3,7 +3,11 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import Redis from "ioredis";
+
+import RedisMock from "ioredis-mock";
+
 import authRoutes from "./routes/auth";
 import { generateJWKPair } from "./jwks";
 import { httpLogger, logger } from "./utils/logger";
@@ -37,17 +41,27 @@ app.get("/metrics", async (req, res) => {
 async function startServer() {
   try {
     // Connect to MongoDB
-    if (process.env.MONGO_URI) {
+    if (process.env.USE_MONGO_MOCK === "true") {
+        const mongoServer = await MongoMemoryServer.create();
+        const uri = mongoServer.getUri();
+        await mongoose.connect(uri);
+        logger.info("Connected to Local Mock MongoDB");
+    } else if (process.env.MONGO_URI) {
         await mongoose.connect(process.env.MONGO_URI);
         logger.info("Connected to MongoDB");
     } else {
-        logger.warn("MONGO_URI not found in .env");
+        logger.warn("MONGO_URI not found in .env and MOCK is disabled");
     }
 
+
     // Connect to Redis
-    const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+    const redis = process.env.USE_REDIS_MOCK === "true" 
+        ? new RedisMock() as any
+        : new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+    
     app.set("redis", redis);
-    logger.info("Connected to Redis");
+    logger.info(process.env.USE_REDIS_MOCK === "true" ? "Using Mock Redis for local development" : "Connected to Redis");
+
 
     // Rate Limiting
     const { createRateLimiter } = await import("./middlewares/rateLimiter");

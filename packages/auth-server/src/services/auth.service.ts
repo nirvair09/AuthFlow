@@ -1,5 +1,6 @@
 import { UserRepository } from "../repositories/user.repository";
-import argon2 from "argon2";
+import bcrypt from "bcryptjs";
+
 import { randomHex, sha256hex } from "../utils";
 import { Redis } from "ioredis";
 import { SignJWT, importJWK } from "jose";
@@ -20,7 +21,8 @@ export class AuthService {
         const existingUser = await this.userRepository.findByEmail(email);
         if (existingUser) throw new Error("User already exists");
 
-        const passwordHash = await argon2.hash(password);
+        const passwordHash = await bcrypt.hash(password, 10);
+
         const user = await this.userRepository.create({
             email,
             name,

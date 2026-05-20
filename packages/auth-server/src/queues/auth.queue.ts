@@ -1,12 +1,21 @@
 import { Queue, Worker, Job } from "bullmq";
-import { Redis } from "ioredis";
+import Redis from "ioredis";
+import RedisMock from "ioredis-mock";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 // Create a connection to Redis
-const connection = new Redis(REDIS_URL, {
-    maxRetriesPerRequest: null,
-});
+const connection = process.env.USE_REDIS_MOCK === "true"
+    ? new RedisMock() as any
+    : new Redis(REDIS_URL, {
+        maxRetriesPerRequest: null,
+    });
+
 
 /**
  * Authentication Events Queue
